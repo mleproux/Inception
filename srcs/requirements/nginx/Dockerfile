@@ -1,11 +1,18 @@
-FROM alpine:3.23.2
+FROM debian:bookworm
 
-RUN apk update
-RUN apk add nginx openssl
+RUN apt update && apt install -y \
+    nginx \
+    openssl \
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY ./nginx.conf /etc/nginx/nginx.conf
-WORKDIR /var/www/html
+RUN mkdir -p /etc/nginx/ssl /var/run/nginx
 
-RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FR/ST=Normandie/L=Le Havre/O=42/OU=42LeHavre/CN=mleproux.42.fr"
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY tools/entrypoint.sh /entrypoint.sh
 
-CMD ["nginx", ["-g"] ,"daemon off"]
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 443
+
+ENTRYPOINT ["/entrypoint.sh"]
